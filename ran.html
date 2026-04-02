@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC 추첨기</title>
+    <!-- 외부 라이브러리: SheetJS (Excel 처리), Google Fonts (타이포그래피) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Noto+Sans+KR:wght@300;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --yonsei-blue: #003876;
+            --yonsei-white: #FFFFFF;
+            --yonsei-black: #231F20;
+            --yonsei-gray: #919396;
+            --yonsei-silver: #C9CACB;
+            --accent-red: #D32F2F;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            color: var(--yonsei-black);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header Area */
+        header {
+            background-color: var(--yonsei-blue);
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        header h1 {
+            color: var(--yonsei-white);
+            font-size: 24px;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            display: flex;
+            padding: 40px;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Left: Sidebar */
+        .sidebar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--yonsei-white);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .upload-section {
+            border: 2px dashed var(--yonsei-silver);
+            transition: all 0.3s;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .upload-section:hover {
+            border-color: var(--yonsei-blue);
+            background-color: #f0f4f8;
+        }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 18px;
+            color: var(--yonsei-gray);
+        }
+
+        .stats b {
+            color: var(--yonsei-blue);
+            font-size: 24px;
+        }
+
+        /* Right: Result Display */
+        .display-area {
+            flex: 2.5;
+            background: var(--yonsei-white);
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--yonsei-silver);
+        }
+
+        .display-area::before {
+            content: "CONGRATULATIONS";
+            position: absolute;
+            top: 40px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--yonsei-silver);
+            letter-spacing: 5px;
+        }
+
+        #result-id {
+            font-size: 40px;
+            color: var(--yonsei-gray);
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        #result-name {
+            font-size: 120px;
+            font-weight: 700;
+            color: var(--yonsei-blue);
+            transition: transform 0.1s ease-out;
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Footer: Buttons */
+        footer {
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding-bottom: 20px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-reset {
+            background-color: var(--yonsei-silver);
+            color: var(--yonsei-white);
+            width: 140px;
+            height: 60px;
+        }
+
+        .btn-draw {
+            background-color: var(--yonsei-blue);
+            color: var(--yonsei-white);
+            width: 320px;
+            height: 60px;
+            box-shadow: 0 10px 20px rgba(0, 56, 118, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn:disabled {
+            background-color: var(--yonsei-silver);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Animation classes */
+        .drawing-text {
+            animation: pulse 0.1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.02);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>RC 추첨기</h1>
+    </header>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="card">
+                <h3 style="margin-bottom: 20px;">DATA PANEL</h3>
+                <label for="file-input" class="upload-section">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#003876" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p style="margin-top: 15px; font-weight: 500;">UPLOAD EXCEL (.xlsx)</p>
+                    <p style="font-size: 12px; color: var(--yonsei-gray); margin-top: 5px;">Must include '학번' and '이름'
+                    </p>
+                </label>
+                <input type="file" id="file-input" accept=".xlsx" />
+
+                <div class="stats" id="stats-display">
+                    Loaded: <b id="count-display">0</b> Person(s)
+                </div>
+            </div>
+        </div>
+
+        <div class="display-area">
+            <div id="result-id">STUDENT ID</div>
+            <div id="result-name">WAITING...</div>
+        </div>
+    </div>
+
+    <footer>
+        <button class="btn btn-reset" onclick="resetApp()">RESET</button>
+        <button class="btn btn-draw" id="draw-btn" onclick="startDrawing()">START DRAWING</button>
+    </footer>
+
+    <script>
+        let participants = [];
+        let isDrawing = false;
+
+        const fileInput = document.getElementById('file-input');
+        const countDisplay = document.getElementById('count-display');
+        const resultId = document.getElementById('result-id');
+        const resultName = document.getElementById('result-name');
+        const drawBtn = document.getElementById('draw-btn');
+
+        // Excel 파싱 처리
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const data = evt.target.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                // 유효성 검사
+                if (json.length > 0 && ('학번' in json[0]) && ('이름' in json[0])) {
+                    participants = json;
+                    countDisplay.innerText = participants.length;
+                    alert(`${participants.length}명의 데이터를 성공적으로 불러왔습니다.`);
+                } else {
+                    alert("데이터 형식이 올바르지 않습니다. '학번'과 '이름' 컬럼이 필요합니다.");
+                }
+            };
+            reader.readAsBinaryString(file);
+        });
+
+        // 추첨 시작 애니메이션
+        function startDrawing() {
+            if (participants.length === 0) {
+                alert("먼저 엑셀 데이터를 업로드해 주세요.");
+                return;
+            }
+            if (isDrawing) return;
+
+            isDrawing = true;
+            drawBtn.disabled = true;
+            resultName.classList.add('drawing-text');
+            resultId.style.color = 'var(--yonsei-silver)';
+
+            let duration = 2000; // 2초간 애니메이션
+            let startTime = Date.now();
+
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / duration;
+
+                // 랜덤하게 이름 보여주기
+                const randomIndex = Math.floor(Math.random() * participants.length);
+                const current = participants[randomIndex];
+
+                resultId.innerText = current['학번'];
+                resultName.innerText = current['이름'];
+
+                if (progress < 1) {
+                    // 점차 느려지는 효과 (감속)
+                    const delay = 50 + (Math.pow(progress, 2) * 200);
+                    setTimeout(animate, delay);
+                } else {
+                    finishDrawing();
+                }
+            };
+
+            animate();
+        }
+
+        // 추첨 완료
+        function finishDrawing() {
+            isDrawing = false;
+            drawBtn.disabled = false;
+            resultName.classList.remove('drawing-text');
+
+            // 강조 효과
+            resultId.style.color = 'var(--yonsei-black)';
+            resultName.style.color = '#E02020'; // 당첨자 강조색
+            resultName.style.transform = 'scale(1.1) rotate(-2deg)';
+
+            setTimeout(() => {
+                resultName.style.color = 'var(--yonsei-blue)';
+                resultName.style.transform = 'scale(1.0)';
+            }, 600);
+        }
+
+        // 초기화
+        function resetApp() {
+            if (isDrawing) return;
+            resultId.innerText = "STUDENT ID";
+            resultName.innerText = "WAITING...";
+            resultId.style.color = 'var(--yonsei-gray)';
+            resultName.style.color = 'var(--yonsei-blue)';
+        }
+    </script>
+</body>
+
+</html>
