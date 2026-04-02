@@ -128,11 +128,23 @@
             z-index: 5;
         }
 
-        body.is-drawing .display-area {
+        body.is-drawing .display-area,
+        body.has-result .display-area {
             z-index: 100;
-            transform: scale(1.05);
-            box-shadow: 0 0 50px rgba(0, 56, 118, 0.5);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1.1);
+            width: 800px;
+            height: 600px;
+            box-shadow: 0 0 100px rgba(0, 56, 118, 0.7);
             border-color: var(--yonsei-white);
+            background: var(--yonsei-white);
+        }
+
+        body.has-result #drawing-overlay {
+            opacity: 1;
+            visibility: visible;
         }
 
         /* Overlay for Spotlight */
@@ -432,7 +444,7 @@
             winnerItem.classList.remove('winner-flash');
             winnerItem.style.color = 'var(--yonsei-blue)';
 
-            let duration = 3500; // Increased duration for more tension
+            let duration = 5500; // Increased duration for more tension (3.5s + 2s)
             let startTime = Date.now();
             let lastShuffleTime = 0;
             let shuffleDelay = 50; // Initial fast shuffle
@@ -472,6 +484,7 @@
             isDrawing = false;
             drawBtn.disabled = false;
             document.body.classList.remove('is-drawing');
+            document.body.classList.add('has-result');
 
             // Pick final winner
             const finalIndex = Math.floor(Math.random() * participants.length);
@@ -512,6 +525,7 @@
 
         function resetApp() {
             if (isDrawing) return;
+            document.body.classList.remove('has-result');
             resultId.innerText = "STUDENT ID";
             const winnerItem = reelContent.querySelector('.reel-item');
             winnerItem.innerText = "WAITING...";
