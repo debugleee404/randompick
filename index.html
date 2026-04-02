@@ -7,6 +7,7 @@
     <title>RC 추첨기</title>
     <!-- 외부 라이브러리: SheetJS (Excel 처리), Google Fonts (타이포그래피) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Noto+Sans+KR:wght@300;500;700&display=swap"
         rel="stylesheet">
@@ -18,7 +19,8 @@
             --yonsei-black: #231F20;
             --yonsei-gray: #919396;
             --yonsei-silver: #C9CACB;
-            --accent-red: #D32F2F;
+            --accent-red: #E02020;
+            --overlay-bg: rgba(0, 0, 0, 0.85);
         }
 
         * {
@@ -122,6 +124,35 @@
             position: relative;
             overflow: hidden;
             border: 1px solid var(--yonsei-silver);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5;
+        }
+
+        body.is-drawing .display-area {
+            z-index: 100;
+            transform: scale(1.05);
+            box-shadow: 0 0 50px rgba(0, 56, 118, 0.5);
+            border-color: var(--yonsei-white);
+        }
+
+        /* Overlay for Spotlight */
+        #drawing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay-bg);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        body.is-drawing #drawing-overlay {
+            opacity: 1;
+            visibility: visible;
         }
 
         .display-area::before {
@@ -132,21 +163,97 @@
             font-weight: 700;
             color: var(--yonsei-silver);
             letter-spacing: 5px;
+            transition: opacity 0.3s;
+        }
+
+        body.is-drawing .display-area::before {
+            opacity: 0;
         }
 
         #result-id {
-            font-size: 40px;
+            font-size: 36px;
             color: var(--yonsei-gray);
-            margin-bottom: 10px;
+            margin-bottom: 20px;
             font-weight: 300;
+            z-index: 10;
         }
 
-        #result-name {
+        /* Reel Container */
+        .reel-viewport {
+            height: 160px;
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .reel-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.1s linear;
+            will-change: transform;
+        }
+
+        .reel-item {
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 120px;
             font-weight: 700;
             color: var(--yonsei-blue);
-            transition: transform 0.1s ease-out;
             text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.05);
+            white-space: nowrap;
+        }
+
+        body.is-drawing .reel-item {
+            color: var(--yonsei-blue);
+        }
+
+        /* Winner Zoom & Shake */
+        .winner-flash {
+            animation: winner-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+                       winner-shake 0.5s ease-in-out;
+        }
+
+        @keyframes winner-pop {
+            0% { transform: scale(0.8); color: var(--yonsei-blue); }
+            50% { transform: scale(1.2); color: var(--accent-red); }
+            100% { transform: scale(1.1); color: var(--yonsei-blue); }
+        }
+
+        @keyframes winner-shake {
+            0% { transform: scale(1.1) rotate(0deg); }
+            20% { transform: scale(1.1) rotate(-3deg); }
+            40% { transform: scale(1.1) rotate(3deg); }
+            60% { transform: scale(1.1) rotate(-1deg); }
+            80% { transform: scale(1.1) rotate(1deg); }
+            100% { transform: scale(1.1) rotate(0deg); }
+        }
+
+        /* SEARCHING Pulse */
+        .searching-text {
+            position: absolute;
+            bottom: 40px;
+            font-weight: 700;
+            color: var(--yonsei-blue);
+            letter-spacing: 2px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        body.is-drawing .searching-text {
+            opacity: 1;
+            animation: pulse-opac 1s infinite;
+        }
+
+        @keyframes pulse-opac {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
         }
 
         /* Footer: Buttons */
@@ -231,6 +338,8 @@
 
 <body>
 
+    <div id="drawing-overlay"></div>
+
     <header>
         <h1>RC 추첨기</h1>
     </header>
@@ -260,7 +369,12 @@
 
         <div class="display-area">
             <div id="result-id">STUDENT ID</div>
-            <div id="result-name">WAITING...</div>
+            <div class="reel-viewport">
+                <div class="reel-content" id="reel-content">
+                    <div class="reel-item" id="result-name">WAITING...</div>
+                </div>
+            </div>
+            <div class="searching-text">SEARCHING...</div>
         </div>
     </div>
 
@@ -276,10 +390,10 @@
         const fileInput = document.getElementById('file-input');
         const countDisplay = document.getElementById('count-display');
         const resultId = document.getElementById('result-id');
-        const resultName = document.getElementById('result-name');
+        const reelContent = document.getElementById('reel-content');
         const drawBtn = document.getElementById('draw-btn');
 
-        // Excel 파싱 처리
+        // Excel parsing
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -292,7 +406,6 @@
                 const worksheet = workbook.Sheets[firstSheetName];
                 const json = XLSX.utils.sheet_to_json(worksheet);
 
-                // 유효성 검사
                 if (json.length > 0 && ('학번' in json[0]) && ('이름' in json[0])) {
                     participants = json;
                     countDisplay.innerText = participants.length;
@@ -304,7 +417,6 @@
             reader.readAsBinaryString(file);
         });
 
-        // 추첨 시작 애니메이션
         function startDrawing() {
             if (participants.length === 0) {
                 alert("먼저 엑셀 데이터를 업로드해 주세요.");
@@ -314,59 +426,98 @@
 
             isDrawing = true;
             drawBtn.disabled = true;
-            resultName.classList.add('drawing-text');
-            resultId.style.color = 'var(--yonsei-silver)';
+            document.body.classList.add('is-drawing');
+            
+            const winnerItem = reelContent.querySelector('.reel-item');
+            winnerItem.classList.remove('winner-flash');
+            winnerItem.style.color = 'var(--yonsei-blue)';
 
-            let duration = 2000; // 2초간 애니메이션
+            let duration = 3500; // Increased duration for more tension
             let startTime = Date.now();
+            let lastShuffleTime = 0;
+            let shuffleDelay = 50; // Initial fast shuffle
 
             const animate = () => {
-                const elapsed = Date.now() - startTime;
+                const now = Date.now();
+                const elapsed = now - startTime;
                 const progress = elapsed / duration;
 
-                // 랜덤하게 이름 보여주기
-                const randomIndex = Math.floor(Math.random() * participants.length);
-                const current = participants[randomIndex];
-
-                resultId.innerText = current['학번'];
-                resultName.innerText = current['이름'];
-
                 if (progress < 1) {
-                    // 점차 느려지는 효과 (감속)
-                    const delay = 50 + (Math.pow(progress, 2) * 200);
-                    setTimeout(animate, delay);
+                    // Smooth jitter (physical feel)
+                    const jitter = (1 - progress) * 15;
+                    reelContent.style.transform = `translateY(${Math.sin(now / 30) * jitter}px)`;
+
+                    // Exponentially slowing shuffle
+                    // Linear to quadratic delay: 50ms -> ~300ms
+                    shuffleDelay = 50 + (Math.pow(progress, 2.5) * 400);
+
+                    if (now - lastShuffleTime > shuffleDelay) {
+                        const randomIndex = Math.floor(Math.random() * participants.length);
+                        const current = participants[randomIndex];
+                        resultId.innerText = current['학번'];
+                        winnerItem.innerText = current['이름'];
+                        lastShuffleTime = now;
+                    }
+
+                    requestAnimationFrame(animate);
                 } else {
                     finishDrawing();
                 }
             };
 
-            animate();
+            requestAnimationFrame(animate);
         }
 
-        // 추첨 완료
         function finishDrawing() {
             isDrawing = false;
             drawBtn.disabled = false;
-            resultName.classList.remove('drawing-text');
+            document.body.classList.remove('is-drawing');
 
-            // 강조 효과
-            resultId.style.color = 'var(--yonsei-black)';
-            resultName.style.color = '#E02020'; // 당첨자 강조색
-            resultName.style.transform = 'scale(1.1) rotate(-2deg)';
+            // Pick final winner
+            const finalIndex = Math.floor(Math.random() * participants.length);
+            const winner = participants[finalIndex];
 
+            resultId.innerText = winner['학번'];
+            const winnerItem = reelContent.querySelector('.reel-item');
+            winnerItem.innerText = winner['이름'];
+            winnerItem.classList.add('winner-flash');
+            reelContent.style.transform = 'translateY(0)';
+
+            // Confetti effect
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#003876', '#FFFFFF', '#C9CACB']
+            });
+
+            // Double burst
             setTimeout(() => {
-                resultName.style.color = 'var(--yonsei-blue)';
-                resultName.style.transform = 'scale(1.0)';
-            }, 600);
+                confetti({
+                    particleCount: 100,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#003876', '#FFFFFF']
+                });
+                confetti({
+                    particleCount: 100,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#003876', '#FFFFFF']
+                });
+            }, 250);
         }
 
-        // 초기화
         function resetApp() {
             if (isDrawing) return;
             resultId.innerText = "STUDENT ID";
-            resultName.innerText = "WAITING...";
-            resultId.style.color = 'var(--yonsei-gray)';
-            resultName.style.color = 'var(--yonsei-blue)';
+            const winnerItem = reelContent.querySelector('.reel-item');
+            winnerItem.innerText = "WAITING...";
+            winnerItem.classList.remove('winner-flash');
+            winnerItem.style.color = 'var(--yonsei-blue)';
+            reelContent.style.transform = 'translateY(0)';
         }
     </script>
 </body>
