@@ -33,10 +33,18 @@
         body {
             background-color: #f4f6f9;
             color: var(--yonsei-black);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 769px) {
+            body {
+                height: 100vh;
+                overflow: hidden;
+            }
         }
 
         /* Header Area */
@@ -61,12 +69,14 @@
         .container {
             flex: 1;
             display: flex;
-            padding: 40px;
-            gap: 30px;
+            padding: 20px;
+            gap: 20px;
             max-width: 1400px;
             margin: 0 auto;
             width: 100%;
         }
+
+
 
         /* Left: Sidebar */
         .sidebar {
@@ -135,12 +145,17 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(1.1);
-            width: 800px;
-            height: 600px;
+            width: 90%;
+            max-width: 800px;
+            height: auto;
+            min-height: 400px;
+            padding: 40px 0;
             box-shadow: 0 0 100px rgba(0, 56, 118, 0.7);
             border-color: var(--yonsei-white);
             background: var(--yonsei-white);
         }
+
+
 
         body.has-result #drawing-overlay {
             opacity: 1;
@@ -199,6 +214,45 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            margin-bottom: 30px;
+        }
+
+        /* Result View Extras (X button, Next button) */
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: none;
+            border: none;
+            font-size: 32px;
+            color: var(--yonsei-silver);
+            cursor: pointer;
+            z-index: 110;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--yonsei-black);
+        }
+
+        .btn-next {
+            background-color: var(--yonsei-blue);
+            color: var(--yonsei-white);
+            width: 200px;
+            height: 50px;
+            font-size: 16px;
+            display: none;
+            z-index: 110;
+        }
+
+        body.has-result .close-btn,
+        body.has-result .btn-next {
+            display: flex;
         }
 
         .reel-content {
@@ -270,13 +324,16 @@
 
         /* Footer: Buttons */
         footer {
-            height: 120px;
+            height: auto;
+            min-height: 100px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
-            padding-bottom: 20px;
+            gap: 15px;
+            padding: 20px;
         }
+
+
 
         .btn {
             border: none;
@@ -342,6 +399,63 @@
             }
         }
 
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 20px;
+            }
+            .container {
+                flex-direction: column;
+                padding: 15px;
+                gap: 15px;
+            }
+            body.is-drawing .display-area,
+            body.has-result .display-area {
+                width: 95%;
+                min-height: 320px;
+                padding: 50px 0 30px 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            .display-area::before {
+                top: 25px;
+                font-size: 10px;
+                letter-spacing: 2px;
+            }
+            #result-id {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+            .reel-item {
+                font-size: 42px;
+                height: 70px;
+            }
+            .reel-viewport {
+                height: 70px;
+                margin-bottom: 20px;
+            }
+            .btn-next {
+                width: 160px;
+                height: 45px;
+                font-size: 14px;
+            }
+            .close-btn {
+                top: 10px;
+                right: 10px;
+            }
+            footer {
+                flex-direction: column-reverse;
+                gap: 10px;
+            }
+            .btn-draw {
+                width: 100%;
+                max-width: 320px;
+            }
+            .btn-reset {
+                width: 100%;
+                max-width: 320px;
+                height: 50px;
+            }
+        }
+
         #file-input {
             display: none;
         }
@@ -380,12 +494,14 @@
         </div>
 
         <div class="display-area">
+            <button class="close-btn" onclick="resetApp()">&times;</button>
             <div id="result-id">STUDENT ID</div>
             <div class="reel-viewport">
                 <div class="reel-content" id="reel-content">
                     <div class="reel-item" id="result-name">WAITING...</div>
                 </div>
             </div>
+            <button class="btn btn-next" onclick="startDrawing()">다 음 뽑 기</button>
             <div class="searching-text">SEARCHING...</div>
         </div>
     </div>
@@ -438,13 +554,14 @@
 
             isDrawing = true;
             drawBtn.disabled = true;
+            document.body.classList.remove('has-result');
             document.body.classList.add('is-drawing');
             
             const winnerItem = reelContent.querySelector('.reel-item');
             winnerItem.classList.remove('winner-flash');
             winnerItem.style.color = 'var(--yonsei-blue)';
 
-            let duration = 5500; // Increased duration for more tension (3.5s + 2s)
+            let duration = 4500; // Reduced by 1s (from 5500) for faster result
             let startTime = Date.now();
             let lastShuffleTime = 0;
             let shuffleDelay = 50; // Initial fast shuffle
