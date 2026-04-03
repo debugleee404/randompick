@@ -130,7 +130,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 520px;
             justify-content: center;
+            padding: 60px 40px;
             position: relative;
             overflow: hidden;
             border: 1px solid var(--yonsei-silver);
@@ -146,20 +148,19 @@
             left: 50%;
             transform: translate(-50%, -50%) scale(1.1);
             width: 90%;
-            max-width: 800px;
+            max-width: 850px;
             height: auto;
-            min-height: 400px;
-            padding: 40px 0;
+            min-height: 450px;
+            padding: 80px 20px;
             box-shadow: 0 0 100px rgba(0, 56, 118, 0.7);
             border-color: var(--yonsei-white);
             background: var(--yonsei-white);
         }
 
-
-
-        body.has-result #drawing-overlay {
-            opacity: 1;
-            visibility: visible;
+        /* 홈 화면/결과창 전환 시 하단 버튼 제어 */
+        body.is-drawing footer,
+        body.has-result footer {
+            display: none;
         }
 
         /* Overlay for Spotlight */
@@ -174,10 +175,11 @@
             opacity: 0;
             visibility: hidden;
             transition: all 0.5s ease;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
         }
 
-        body.is-drawing #drawing-overlay {
+        body.is-drawing #drawing-overlay,
+        body.has-result #drawing-overlay {
             opacity: 1;
             visibility: visible;
         }
@@ -198,45 +200,53 @@
         }
 
         #result-id {
-            font-size: 36px;
+            font-size: clamp(20px, 3vw, 28px);
             color: var(--yonsei-gray);
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             font-weight: 300;
             z-index: 10;
+            line-height: normal;
+            width: 100%;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* Reel Container */
         .reel-viewport {
-            height: 160px;
+            height: 180px;
             overflow: hidden;
             position: relative;
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         /* Result View Extras (X button, Next button) */
         .close-btn {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 25px;
+            right: 25px;
             width: 40px;
             height: 40px;
-            background: none;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 50%;
             border: none;
-            font-size: 32px;
+            font-size: 24px;
             color: var(--yonsei-silver);
             cursor: pointer;
             z-index: 110;
             display: none;
             align-items: center;
             justify-content: center;
-            transition: color 0.3s;
+            transition: all 0.3s;
         }
 
         .close-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
             color: var(--yonsei-black);
         }
 
@@ -244,10 +254,16 @@
             background-color: var(--yonsei-blue);
             color: var(--yonsei-white);
             width: 200px;
-            height: 50px;
-            font-size: 16px;
+            height: 55px;
+            font-size: 18px;
+            border-radius: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
             display: none;
             z-index: 110;
+            box-shadow: 0 4px 15px rgba(0, 56, 118, 0.3);
+            margin-top: 10px;
         }
 
         body.has-result .close-btn,
@@ -264,15 +280,21 @@
         }
 
         .reel-item {
-            height: 160px;
+            height: 180px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 120px;
+            font-size: clamp(50px, 10vw, 110px);
             font-weight: 700;
             color: var(--yonsei-blue);
             text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.05);
             white-space: nowrap;
+            width: 100%;
+            padding: 0 20px;
+            text-align: center;
+            line-height: normal;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         body.is-drawing .reel-item {
@@ -282,31 +304,60 @@
         /* Winner Zoom & Shake */
         .winner-flash {
             animation: winner-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
-                       winner-shake 0.5s ease-in-out;
+                winner-shake 0.5s ease-in-out;
         }
 
         @keyframes winner-pop {
-            0% { transform: scale(0.8); color: var(--yonsei-blue); }
-            50% { transform: scale(1.2); color: var(--accent-red); }
-            100% { transform: scale(1.1); color: var(--yonsei-blue); }
+            0% {
+                transform: scale(0.8);
+                color: var(--yonsei-blue);
+            }
+
+            50% {
+                transform: scale(1.15);
+                color: var(--accent-red);
+            }
+
+            100% {
+                transform: scale(1.1);
+                color: var(--yonsei-blue);
+            }
         }
 
         @keyframes winner-shake {
-            0% { transform: scale(1.1) rotate(0deg); }
-            20% { transform: scale(1.1) rotate(-3deg); }
-            40% { transform: scale(1.1) rotate(3deg); }
-            60% { transform: scale(1.1) rotate(-1deg); }
-            80% { transform: scale(1.1) rotate(1deg); }
-            100% { transform: scale(1.1) rotate(0deg); }
+            0% {
+                transform: scale(1.1) rotate(0deg);
+            }
+
+            20% {
+                transform: scale(1.1) rotate(-2deg);
+            }
+
+            40% {
+                transform: scale(1.1) rotate(2deg);
+            }
+
+            60% {
+                transform: scale(1.1) rotate(-1deg);
+            }
+
+            80% {
+                transform: scale(1.1) rotate(1deg);
+            }
+
+            100% {
+                transform: scale(1.1) rotate(0deg);
+            }
         }
 
         /* SEARCHING Pulse */
         .searching-text {
             position: absolute;
-            bottom: 40px;
+            bottom: 30px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--yonsei-blue);
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             opacity: 0;
             transition: opacity 0.3s;
         }
@@ -317,23 +368,30 @@
         }
 
         @keyframes pulse-opac {
-            0% { opacity: 0.3; }
-            50% { opacity: 1; }
-            100% { opacity: 0.3; }
+            0% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+
+            100% {
+                opacity: 0.3;
+            }
         }
 
         /* Footer: Buttons */
         footer {
             height: auto;
-            min-height: 100px;
+            min-height: 120px;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 15px;
             padding: 20px;
+            transition: opacity 0.3s;
         }
-
-
 
         .btn {
             border: none;
@@ -403,52 +461,67 @@
             header h1 {
                 font-size: 20px;
             }
+
             .container {
                 flex-direction: column;
                 padding: 15px;
                 gap: 15px;
             }
+
             body.is-drawing .display-area,
             body.has-result .display-area {
                 width: 95%;
-                min-height: 320px;
-                padding: 50px 0 30px 0;
+                min-height: 350px;
+                padding: 60px 10px 40px 10px;
                 transform: translate(-50%, -50%) scale(1);
             }
+
             .display-area::before {
                 top: 25px;
                 font-size: 10px;
                 letter-spacing: 2px;
             }
+
             #result-id {
-                font-size: 18px;
-                margin-bottom: 15px;
+                font-size: 16px;
+                margin-bottom: 5px;
             }
+
             .reel-item {
-                font-size: 42px;
-                height: 70px;
+                font-size: 48px;
+                height: 80px;
             }
+
             .reel-viewport {
-                height: 70px;
+                height: 80px;
                 margin-bottom: 20px;
             }
+
             .btn-next {
                 width: 160px;
-                height: 45px;
-                font-size: 14px;
+                height: 50px;
+                font-size: 16px;
             }
+
             .close-btn {
-                top: 10px;
-                right: 10px;
+                top: 15px;
+                right: 15px;
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
             }
+
             footer {
                 flex-direction: column-reverse;
                 gap: 10px;
+                padding: 10px;
             }
+
             .btn-draw {
                 width: 100%;
                 max-width: 320px;
             }
+
             .btn-reset {
                 width: 100%;
                 max-width: 320px;
@@ -512,6 +585,151 @@
     </footer>
 
     <script>
+        // --- Web Audio API 기반 오디오 관리자 ---
+        const AudioManager = {
+            ctx: null,
+            drone: null,
+            heartbeat: null,
+            masterGain: null,
+
+            init() {
+                if (this.ctx) return;
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.connect(this.ctx.destination);
+                this.masterGain.gain.value = 0.5;
+            },
+
+            // 긴장감 조성 드론 & 심장박동 사운드
+            playTension() {
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                // 1. 저음 드론 (베이스)
+                this.drone = this.ctx.createOscillator();
+                const droneGain = this.ctx.createGain();
+                this.drone.type = 'sawtooth';
+                this.drone.frequency.setValueAtTime(40, this.ctx.currentTime);
+
+                // 필터로 부드럽게
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(200, this.ctx.currentTime);
+
+                droneGain.gain.setValueAtTime(0, this.ctx.currentTime);
+                droneGain.gain.linearRampToValueAtTime(0.2, this.ctx.currentTime + 1);
+
+                this.drone.connect(filter);
+                filter.connect(droneGain);
+                droneGain.connect(this.masterGain);
+                this.drone.start();
+
+                // 2. 심장박동 (LFO + Sine)
+                this.heartbeat = this.ctx.createOscillator();
+                this.hbGain = this.ctx.createGain();
+                this.heartbeat.type = 'sine';
+                this.heartbeat.frequency.setValueAtTime(60, this.ctx.currentTime);
+
+                this.hbGain.gain.setValueAtTime(0, this.ctx.currentTime);
+                this.heartbeat.connect(this.hbGain);
+                this.hbGain.connect(this.masterGain);
+                this.heartbeat.start();
+
+                this.updateTension(0);
+            },
+
+            updateTension(progress) {
+                if (!this.heartbeat) return;
+
+                const now = this.ctx.currentTime;
+                // 진행도에 따라 박동 속도 및 피치 상승
+                const speed = 0.1 + (progress * 0.4); // 박동 간격 축소
+                const vol = 0.3 + (progress * 0.5);
+
+                this.hbGain.gain.cancelScheduledValues(now);
+                this.hbGain.gain.setValueAtTime(0, now);
+                // 더블 비트 (두-둠)
+                this.hbGain.gain.linearRampToValueAtTime(vol, now + 0.05);
+                this.hbGain.gain.linearRampToValueAtTime(0, now + 0.15);
+                this.hbGain.gain.linearRampToValueAtTime(vol * 0.7, now + 0.2);
+                this.hbGain.gain.linearRampToValueAtTime(0, now + 0.4);
+
+                // 드론 필터 주파수 상승
+                if (this.drone) {
+                    this.drone.frequency.setValueAtTime(40 + (progress * 40), now);
+                }
+            },
+
+            stopTension() {
+                if (this.drone) {
+                    this.drone.stop();
+                    this.drone = null;
+                }
+                if (this.heartbeat) {
+                    this.heartbeat.stop();
+                    this.heartbeat = null;
+                }
+            },
+
+            // 결과 발표 시 임팩트 사운드 (폭발/팡파르)
+            playImpact() {
+                this.init();
+                const now = this.ctx.currentTime;
+
+                // 1. 화이트 노이즈 (폭발음)
+                const bufferSize = this.ctx.sampleRate * 2;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const noiseGain = this.ctx.createGain();
+
+                const noiseFilter = this.ctx.createBiquadFilter();
+                noiseFilter.type = 'lowpass';
+                noiseFilter.frequency.setValueAtTime(8000, now);
+                noiseFilter.frequency.exponentialRampToValueAtTime(100, now + 1.5);
+
+                noiseGain.gain.setValueAtTime(1, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(this.masterGain);
+                noise.start();
+
+                // 2. 파워풀 킥 (Sub-bass drop)
+                const kick = this.ctx.createOscillator();
+                const kickGain = this.ctx.createGain();
+                kick.frequency.setValueAtTime(150, now);
+                kick.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
+                kickGain.gain.setValueAtTime(1, now);
+                kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                kick.connect(kickGain);
+                kickGain.connect(this.masterGain);
+                kick.start();
+                kick.stop(now + 0.5);
+
+                // 3. 쇳소리/벨 (High-end sparkle)
+                const bell = this.ctx.createOscillator();
+                const bellGain = this.ctx.createGain();
+                bell.type = 'triangle';
+                bell.frequency.setValueAtTime(880, now);
+                bell.frequency.exponentialRampToValueAtTime(440, now + 1);
+                bellGain.gain.setValueAtTime(0.3, now);
+                bellGain.gain.exponentialRampToValueAtTime(0.01, now + 1);
+
+                bell.connect(bellGain);
+                bellGain.connect(this.masterGain);
+                bell.start();
+                bell.stop(now + 1);
+            }
+        };
+
         let participants = [];
         let isDrawing = false;
 
@@ -556,15 +774,19 @@
             drawBtn.disabled = true;
             document.body.classList.remove('has-result');
             document.body.classList.add('is-drawing');
-            
+
+            // 오디오 시작
+            AudioManager.playTension();
+
             const winnerItem = reelContent.querySelector('.reel-item');
             winnerItem.classList.remove('winner-flash');
             winnerItem.style.color = 'var(--yonsei-blue)';
 
-            let duration = 4500; // Reduced by 1s (from 5500) for faster result
+            let duration = 4500;
             let startTime = Date.now();
             let lastShuffleTime = 0;
-            let shuffleDelay = 50; // Initial fast shuffle
+            let lastHeartbeatTime = 0;
+            let shuffleDelay = 50;
 
             const animate = () => {
                 const now = Date.now();
@@ -572,12 +794,9 @@
                 const progress = elapsed / duration;
 
                 if (progress < 1) {
-                    // Smooth jitter (physical feel)
                     const jitter = (1 - progress) * 15;
                     reelContent.style.transform = `translateY(${Math.sin(now / 30) * jitter}px)`;
 
-                    // Exponentially slowing shuffle
-                    // Linear to quadratic delay: 50ms -> ~300ms
                     shuffleDelay = 50 + (Math.pow(progress, 2.5) * 400);
 
                     if (now - lastShuffleTime > shuffleDelay) {
@@ -586,6 +805,13 @@
                         resultId.innerText = current['학번'];
                         winnerItem.innerText = current['이름'];
                         lastShuffleTime = now;
+                    }
+
+                    // 긴장감 사운드 업데이트 (심장박동 주기 제어)
+                    const hbInterval = 1000 - (progress * 700); // 1초에서 0.3초로 빨라짐
+                    if (now - lastHeartbeatTime > hbInterval) {
+                        AudioManager.updateTension(progress);
+                        lastHeartbeatTime = now;
                     }
 
                     requestAnimationFrame(animate);
@@ -602,6 +828,10 @@
             drawBtn.disabled = false;
             document.body.classList.remove('is-drawing');
             document.body.classList.add('has-result');
+
+            // 오디오 전환: 긴장감 정지 -> 임팩트 효과음
+            AudioManager.stopTension();
+            AudioManager.playImpact();
 
             // Pick final winner
             const finalIndex = Math.floor(Math.random() * participants.length);
@@ -649,6 +879,8 @@
             winnerItem.classList.remove('winner-flash');
             winnerItem.style.color = 'var(--yonsei-blue)';
             reelContent.style.transform = 'translateY(0)';
+            // 오디오 중단 (필요 시)
+            AudioManager.stopTension();
         }
     </script>
 </body>
